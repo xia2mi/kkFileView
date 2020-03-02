@@ -1,12 +1,11 @@
 package cn.keking.web.filter;
 
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  *
@@ -15,7 +14,6 @@ import java.util.Set;
  */
 @Configuration
 public class FilterConfiguration {
-
 
     @Bean
     public FilterRegistrationBean getChinesePathFilter() {
@@ -32,6 +30,7 @@ public class FilterConfiguration {
         filterUri.add("/picturesPreview");
         filterUri.add("/getCorsFile");
         filterUri.add("/addTask");
+        filterUri.add("/preview");
         TrustHostFilter filter = new TrustHostFilter();
         FilterRegistrationBean registrationBean = new FilterRegistrationBean();
         registrationBean.setFilter(filter);

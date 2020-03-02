@@ -1,25 +1,28 @@
 package cn.keking.web.controller;
 
-import cn.keking.config.ConfigConstants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import cn.keking.model.ReturnResponse;
-import cn.keking.utils.FileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+
+import cn.keking.config.ConfigConstants;
+import cn.keking.model.FileAttribute;
+import cn.keking.model.ReturnResponse;
+import cn.keking.service.FilePreview;
+import cn.keking.service.FilePreviewFactory;
+import cn.keking.utils.FileUtils;
 
 /**
  *
@@ -28,38 +31,43 @@ import java.util.UUID;
  */
 @RestController
 public class FileController {
-    String fileDir = ConfigConstants.getFileDir();
+
     @Autowired
-    FileUtils fileUtils;
+    private FileUtils fileUtils;
+    @Autowired
+    private FilePreviewFactory previewFactory;
+
+    String fileDir = ConfigConstants.getFileDir();
     String demoDir = "demo";
     String demoPath = demoDir + File.separator;
 
     @RequestMapping(value = "fileUpload", method = RequestMethod.POST)
-    public String fileUpload(@RequestParam("file") MultipartFile file,
-                             HttpServletRequest request) throws JsonProcessingException {
+    public String fileUpload(@RequestParam("file") MultipartFile file, HttpServletRequest request)
+        throws JsonProcessingException {
         // 获取文件名
         String fileName = file.getOriginalFilename();
-        //判断是否为IE浏览器的文件名，IE浏览器下文件名会带有盘符信息
+        // 判断是否为IE浏览器的文件名，IE浏览器下文件名会带有盘符信息
         // Check for Unix-style path
         int unixSep = fileName.lastIndexOf('/');
         // Check for Windows-style path
         int winSep = fileName.lastIndexOf('\\');
         // Cut off at latest possible point
         int pos = (winSep > unixSep ? winSep : unixSep);
-        if (pos != -1)  {
+        if (pos != -1) {
             fileName = fileName.substring(pos + 1);
         }
 
         // 判断该文件类型是否有上传过，如果上传过则提示不允许再次上传
         if (existsTypeFile(fileName)) {
-            return new ObjectMapper().writeValueAsString(new ReturnResponse<String>(1, "每一种类型只可以上传一个文件，请先删除原有文件再次上传", null));
+            return new ObjectMapper()
+                .writeValueAsString(new ReturnResponse<String>(1, "每一种类型只可以上传一个文件，请先删除原有文件再次上传", null));
         }
         File outFile = new File(fileDir + demoPath);
         if (!outFile.exists()) {
             outFile.mkdirs();
         }
-        try(InputStream in = file.getInputStream();
-            OutputStream ot = new FileOutputStream(fileDir + demoPath + fileName)){
+        try (InputStream in = file.getInputStream();
+            OutputStream ot = new FileOutputStream(fileDir + demoPath + fileName)) {
             byte[] buffer = new byte[1024];
             int len;
             while ((-1 != (len = in.read(buffer)))) {
@@ -84,12 +92,27 @@ public class FileController {
         return new ObjectMapper().writeValueAsString(new ReturnResponse<String>(0, "SUCCESS", null));
     }
 
+    /**
+     * 根据文件url获取该文件可预览的图片地址
+     * 
+     * @param url
+     * @param req
+     * @return
+     */
+    @GetMapping(value = "/preview")
+    public List<String> listFileByUrl(String url, HttpServletRequest req) {
+        FileAttribute fileAttribute = fileUtils.getFileAttribute(url);
+        FilePreview filePreview = previewFactory.get(fileAttribute);
+        return filePreview.listOnlinePreviewByUrl(url, fileAttribute);
+    }
+
     @RequestMapping(value = "listFiles", method = RequestMethod.GET)
     public String getFiles() throws JsonProcessingException {
         List<Map<String, String>> list = Lists.newArrayList();
         File file = new File(fileDir + demoPath);
         if (file.exists()) {
-            Arrays.stream(file.listFiles()).forEach(file1 -> list.add(ImmutableMap.of("fileName", demoDir + "/" + file1.getName())));
+            Arrays.stream(file.listFiles())
+                .forEach(file1 -> list.add(ImmutableMap.of("fileName", demoDir + "/" + file1.getName())));
         }
         return new ObjectMapper().writeValueAsString(list);
     }
@@ -103,6 +126,7 @@ public class FileController {
 
     /**
      * 是否存在该类型的文件
+     * 
      * @return
      * @param fileName
      */
@@ -111,7 +135,7 @@ public class FileController {
         String suffix = fileUtils.getSuffixFromFileName(fileName);
         File file = new File(fileDir + demoPath);
         if (file.exists()) {
-            for(File file1 : file.listFiles()){
+            for (File file1 : file.listFiles()) {
                 String existsFileSuffix = fileUtils.getSuffixFromFileName(file1.getName());
                 if (suffix.equals(existsFileSuffix)) {
                     result = true;
