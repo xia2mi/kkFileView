@@ -18,11 +18,12 @@ import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.FileUtils;
 import cn.keking.utils.OfficeToPdf;
 import cn.keking.utils.PdfUtils;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by kl on 2018/1/17. Content :处理office文件
  */
-
+@Slf4j
 @Service
 public class OfficeFilePreviewImpl implements FilePreview {
 
