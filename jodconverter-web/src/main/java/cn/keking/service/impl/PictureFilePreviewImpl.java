@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 
 import com.google.common.collect.Lists;
@@ -44,10 +45,15 @@ public class PictureFilePreviewImpl implements FilePreview {
     public List<String> listOnlinePreviewByUrl(String url, FileAttribute fileAttribute) {
         String fileKey = (String)RequestContextHolder.currentRequestAttributes().getAttribute("fileKey", 0);
         try {
-            return fileUtils.getRedisImgUrls(fileKey);
+            List<String> imgUrls = fileUtils.getRedisImgUrls(fileKey);
+            if (CollectionUtils.isEmpty(imgUrls)) {
+                return Lists.newArrayList(url);
+            }
+            return imgUrls;
         } catch (Exception e) {
             log.error("PictureFilePreview,listOnlinePreviewByUrl,exception", e);
         }
+        log.info("PictureFilePreview,listOnlinePreviewByUrl,return,picture not found");
         return Collections.emptyList();
     }
 
