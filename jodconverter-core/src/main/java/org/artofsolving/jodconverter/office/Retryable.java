@@ -36,12 +36,11 @@ abstract class Retryable {
                 attempt();
                 return;
             } catch (TemporaryException temporaryException) {
-                sleep(interval);
-                // if (System.currentTimeMillis() - start < timeout) {
-                // // continue
-                // } else {
-                // throw new RetryTimeoutException(temporaryException.getCause());
-                // }
+                if (System.currentTimeMillis() - start < timeout) {
+                    sleep(interval);
+                } else {
+                    throw new RetryTimeoutException(temporaryException.getCause());
+                }
             }
         }
     }

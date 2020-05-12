@@ -16,7 +16,6 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.star.beans.XPropertySet;
@@ -35,8 +34,6 @@ import com.sun.star.uno.XComponentContext;
 class OfficeConnection implements OfficeContext {
 
     private static AtomicInteger bridgeIndex = new AtomicInteger();
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
 
     private final UnoUrl unoUrl;
 
@@ -63,6 +60,8 @@ class OfficeConnection implements OfficeContext {
             // else we tried to connect to a server that doesn't speak URP
         }
     };
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     public OfficeConnection(UnoUrl unoUrl) {
         this.unoUrl = unoUrl;
@@ -97,11 +96,9 @@ class OfficeConnection implements OfficeContext {
                 listener.connected(connectionEvent);
             }
         } catch (NoConnectException connectException) {
-            logger.log(Level.WARNING, "lyz-1", connectException);
             throw new ConnectException(
                 String.format("connection failed: '%s'; %s", unoUrl, connectException.getMessage()));
         } catch (Exception exception) {
-            logger.log(Level.WARNING, "lyz-2", exception);
             throw new OfficeException("connection failed: " + unoUrl, exception);
         }
     }
